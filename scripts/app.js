@@ -44,20 +44,26 @@
     app.toggleAddDialog(true);
   });
 
-  document.getElementById('butAddCity').addEventListener('click', function() {
+  document.getElementById('butAddCity').addEventListener('click', async () => {
     // Add the newly selected city
-    var select = document.getElementById('selectCityToAdd');
-    var selected = select.options[select.selectedIndex];
-    var key = selected.value;
-    var label = selected.textContent;
-    // TODO init the app.selectedCities array here
-    if (!app.selectedCities) {
-      app.selectedCities = [];
-    }
-    app.getForecast(key, label);
-    // TODO push the selected city to the array and save here
-    app.selectedCities.push({key:key, label: label});
+    // var select = document.getElementById('selectCityToAdd');
+    // var selected = select.options[select.selectedIndex];
+    // var key = selected.value;
+    // var label = selected.textContent;
+    // // TODO init the app.selectedCities array here
+    // if (!app.selectedCities) {
+    //   app.selectedCities = [];
+    // }
+    // app.getForecast(key, label);
+    // // TODO push the selected city to the array and save here
+    // app.selectedCities.push({key:key, label: label});
+    // app.saveSelectedCities();
+    var cityName = document.getElementById('cityInput').value
+    var res = await app.getForecastx(cityName);
+    console.log(JSON.stringify(res));
+    app.selectedCities.push(res);
     app.saveSelectedCities();
+    Object.keys(app.selectedCities).forEach(function(lis) { console.log(JSON.stringify(lis))});
     app.toggleAddDialog(false);
   });
 
@@ -193,6 +199,42 @@
     request.send();
   };
 
+  app.getForecastx = function(cityName) {
+    return new Promise(function(resolve, reject) {
+      var statement = 'select * from weather.forecast where woeid in (select woeid from geo.places(1) where text="' + cityName + '")';
+      var url = 'https://query.yahooapis.com/v1/public/yql?format=json&q=' + statement;
+    // TODO add cache logic here
+
+    // Fetch the latest data.
+      var request = new XMLHttpRequest();
+      request.onreadystatechange = function() {
+        if (request.readyState === XMLHttpRequest.DONE) {
+          if (request.status === 200) {
+            var response = JSON.parse(request.response);
+            var results = response.query.results;
+            var k = results.channel.link.substr(108, 7);
+            var l = results.channel.location.city + ', ' + results.channel.location.region
+            results.key = k;
+            results.label = l;
+            results.created = response.query.created;
+            app.updateForecastCard(results);
+            resolve({key: k, label: l});
+          }
+        } else {
+          // reject()
+        // Return the initial weather forecast since no data is available.
+          app.updateForecastCard(initialWeatherForecast);
+        }
+      };
+      request.addEventListener('error', () => { // a listener which executes when the xhr request fails
+        reject(new Error(request.statusText));
+      });
+    
+      request.open('GET', url);
+      request.send();
+    })
+  };
+  
   // Iterate all of the cards and attempt to get the latest forecast data
   app.updateForecasts = function() {
     var keys = Object.keys(app.visibleCards);
