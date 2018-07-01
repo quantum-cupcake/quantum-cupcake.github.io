@@ -60,10 +60,8 @@
     // app.saveSelectedCities();
     var cityName = document.getElementById('cityInput').value
     var res = await app.getForecastx(cityName);
-    console.log(JSON.stringify(res));
     app.selectedCities.push(res);
     app.saveSelectedCities();
-    Object.keys(app.selectedCities).forEach(function(lis) { console.log(JSON.stringify(lis))});
     app.toggleAddDialog(false);
   });
 
@@ -173,7 +171,7 @@
    * freshest data.
    */
   app.getForecast = function(key, label) {
-    var statement = 'select * from weather.forecast where woeid=' + key;
+    var statement = 'select * from weather.forecast where woeid=' + key + 'and u="c"';
     var url = 'https://query.yahooapis.com/v1/public/yql?format=json&q=' +
         statement;
     // TODO add cache logic here
@@ -201,7 +199,7 @@
 
   app.getForecastx = function(cityName) {
     return new Promise(function(resolve, reject) {
-      var statement = 'select * from weather.forecast where woeid in (select woeid from geo.places(1) where text="' + cityName + '")';
+      var statement = 'select * from weather.forecast where woeid in (select woeid from geo.places(1) where text="' + cityName + '") and u="c"';
       var url = 'https://query.yahooapis.com/v1/public/yql?format=json&q=' + statement;
     // TODO add cache logic here
 
